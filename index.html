@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Javascript Encryption (rijndael-256, cbc)</title>
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+	<script src="js/ie10-viewport-bug-workaround.js"></script>
+	<script src="js/respond.min.js"></script>
+</head>
+<body>
+<div class="header_wrapper">
+	<div class="container">
+		<h1 class="title-header">Javascript Encryption (rijndael-256, cbc)</h1>
+	</div>
+</div>
+<div class="container">
+<script src="js/crypt/rijndael.js"></script>
+<script src="js/crypt/mcrypt.js"></script>
+<script src="js/crypt/cryptojs-core.js"></script>
+<script src="js/crypt/lib-typedarrays.js"></script>
+<script src="js/crypt/md5.js"></script>
+<script>
+var $_GET = {};
+document.location.search.replace(/\??(?:([^=]+)=([^&]*)&?)/g, function () {
+    function decode(s) {
+        return decodeURIComponent(s.split("+").join(" "));
+    }
+    $_GET[decode(arguments[1])] = decode(arguments[2]);
+});
+function encrypt_me(){
+	var str = $('#str').val();
+	var key1 = $('#key1').val();
+	var key2 = $('#key2').val();
+	var ref = $('#ref').val();
+	var mkey1 = md5(key1);
+	var mkey2 = md5(key2);
+
+	var ks = mcrypt.get_key_size('rijndael-256', 'cbc');
+	var kpart1 = mkey1.substr(0, ks/2);
+	var substr1 = mkey2.toUpperCase();
+	var substr2 = Math.round(mkey2.length/2);
+	var substr3 = ks/2;
+	var kpart2 = substr1.substr(substr2,substr3);
+	var key = kpart1.concat(kpart2);
+
+	var join1 = key.concat(mkey1);
+	var join2 = join1.concat(mkey2);
+	var join3 = join2.concat(mkey1.toUpperCase());
+	key = join3.substr(0,ks);
+
+	$('#iv').val(String(CryptoJS.lib.WordArray.random(16)));
+	var iv  = $('#iv').val();
+	$('#key').val(key);
+	$('#length').val(str.length);
+	var enc = btoa(mcrypt.Encrypt(str, iv, key, 'rijndael-256', 'cbc'));
+	$('#enc_str').val(enc);
+	$('#urienc_str').val('?enc_str='+encodeURIComponent(enc)+'&length='+str.length+'&iv='+iv+'&ref='+ref);
+}
+function decrypt_me(){
+	var enc_str = atob($('#enc_str').val());
+	var key1 = $('#key1').val();
+	var key2 = $('#key2').val();
+	var mkey1 = md5(key1);
+	var mkey2 = md5(key2);
+
+	var ks = mcrypt.get_key_size('rijndael-256', 'cbc');
+	var kpart1 = mkey1.substr(0, ks/2);
+	var substr1 = mkey2.toUpperCase();
+	var substr2 = Math.round(mkey2.length/2);
+	var substr3 = ks/2;
+	var kpart2 = substr1.substr(substr2,substr3);
+	var key = kpart1.concat(kpart2);
+
+	var join1 = key.concat(mkey1);
+	var join2 = join1.concat(mkey2);
+	var join3 = join2.concat(mkey1.toUpperCase());
+	key = join3.substr(0,ks);
+
+	var iv  = $('#iv').val();
+	var length = $('#length').val();
+	$('#decrypted').val(mcrypt.Decrypt(enc_str, iv, key, 'rijndael-256', 'cbc').substring(0,length));
+}
+function show_more(){
+	$('.e').toggle();
+	$('#showm').text(($('#showm').text()=='Hide')?'Show More':'Hide');
+	$('#str').val($('#decrypted').val());
+}
+</script>
+		<h2 class="m_2">Client Side Encryption (rijndael-256, cbc)</h2>
+		<div class="company_wrapper">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="form-group e">
+						<label for="str">String:</label>
+						<textarea class="form-control" rows="2" id="str">hello world!</textarea>
+					</div>
+					<div class="form-group">
+						<label for="key1">Password:</label>
+						<input type="password" class="form-control" id="key1" value="" autofocus>
+						<!-- <textarea class="form-control" rows="1" id="key1">password</textarea> -->
+					</div>
+					<div class="form-group">
+						<label for="key2">Key:</label>
+						<input type="password" class="form-control" id="key2" value="">
+					</div>
+					<div class="form-group">
+						<label for="ref">Reference (optional):</label>
+						<textarea class="form-control" rows="1" id="ref"></textarea>
+					</div>
+					<button type="button" class="btn btn-success btn-sm e" onclick="encrypt_me()">Encrypt</button>
+					<hr class="e">
+					<div class="form-group e">
+						<label for="enc_str">Encrypted string:</label>
+						<textarea class="form-control" rows="2" id="enc_str"></textarea>
+					</div>
+					<div class="form-group e">
+						<label for="enc_str">URI encoded string:</label>
+						<textarea class="form-control" rows="2" id="urienc_str"></textarea>
+					</div>
+					<div class="form-group e">
+						<label for="length">Length:</label>
+						<textarea class="form-control" rows="1" id="length"></textarea>
+					</div>
+					<div class="form-group e">
+						<label for="iv">IV:</label>
+						<textarea class="form-control" rows="1" id="iv"></textarea>
+					</div>
+					<div class="form-group">
+						<label for="decrypted">Decrypted string:</label>
+						<textarea class="form-control" rows="2" id="decrypted"></textarea>
+					</div>
+					<button type="button" class="btn btn-danger btn-sm" onclick="decrypt_me()">Decrypt</button>
+					<button type="button" class="btn btn-primary btn-sm" id="showm" onclick="show_more();">Show More</button>
+					<p>&nbsp;</p>
+				</div>
+			</div>
+		</div>
+	</div>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/jquery.placeholder.js"></script>
+<script>
+jQuery(document).ready(function($) {
+	$(".scroll").click(function(event){
+		event.preventDefault();
+		$('html,body').animate({scrollTop:$(this.hash).offset().top},1200);
+	});
+	$('input, textarea').placeholder();
+	if ($_GET["enc_str"]!=null){
+		$('.e').hide();
+		$('#enc_str').val(decodeURIComponent($_GET["enc_str"]));
+	}
+	if ($_GET["length"]!=null){
+		$('#length').val($_GET["length"]);
+	}
+	if ($_GET["iv"]!=null){
+		$('#iv').val($_GET["iv"]);
+	}
+	if ($_GET["ref"]!=null){
+		$('#ref').val($_GET["ref"]);
+	}
+	$("#key1").keyup(function(e){
+    	if ($_GET["enc_str"]!=null && e.which == 13) {
+        	decrypt_me();
+    	}
+	});
+	$("#key2").keyup(function(e){
+    	if ($_GET["enc_str"]!=null && e.which == 13) {
+        	decrypt_me();
+    	}
+	});
+});
+</script>
+</body>
+</html>
+
